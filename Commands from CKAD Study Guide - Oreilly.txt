@@ -1,0 +1,21 @@
+kubectl config set-context context -n namespace
+kubectl config use-context context
+
+alias k=kubectl 
+k version
+
+kubectl api-versions
+
+kubectl run frontend --image=nginx:1.23.0 --port=80 --env="DNS_DOMAIN=cluster" --labels="app=frontend,env=prod" -o yaml --dry-run=client > pod.yaml
+kubectl patch po frontend -p '{"spec":{"containers":[{"name":"frontend","image":"nginx:1.25.0"}]}}'
+kubectl delete po frontend --now
+
+kubectl apply -f dir/ -R
+kubectl delete -f file.yaml --now
+
+docker build --no-cache -t my-image:my-tag . 
+
+kubectl run busybox --image=busybox:1.36.1 -o yaml --dry-run=client > pod.yaml -- /bin/sh -c "while true; do date; sleep 10; done"
+
+kubectl get pv my-pv -o jsonpath='{.spec.accessModes}'
+                     -o jsonpath='{.spec.persistentVolumeReclaimPolicy}'
