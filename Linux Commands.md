@@ -121,3 +121,56 @@ grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' access.log | sort | uniq -c
 ```
 awk 'gsub(/[aeiou]/,"",$4); {print $4}' test.log
 ```
+
+**Audit Expired Passwords**
+
+*/etc/shadow syntax (User Password lastchg min max warn inactive expire reserved)*
+
+*expiry_day = lastchg(3) + max(5)*
+```
+sudo awk -F: '{
+    today = systime() / 86400
+    if ($5 > 0 && $3 > 0 && (today > $3 + $5)) {
+        printf "User: %-12s | Expired %d days ago\n", $1, int(today-($3+$5))
+    }
+}' /etc/shadow
+```
+
+*Passwords getting expired in next 7 days*
+```
+sudo awk -F: '{
+    today=systime()/86400
+    if ($3 > 0 && $5 > 0) {
+        expiry = $3 + $5
+        days_left = int(expiry - today)
+        if (days_left >= 0 && days_left <= 7) 
+            printf "User: %-12s | Expires in %d days\n", $1, days_left
+    }
+}' /etc/shadow
+```
+
+**Sudoers syntax**
+
+*WHO WHERE=(as whom) tags command*
+```
+pulkit ALL=(postgres) NOPASSWD: /usr/bin/psql
+```
+
+**Special Permissions**
+
+*SUID (u+s or 4xxx) SGID (g+s or 2xxx) Sticky (+t or 1xxx)*
+```
+chmod u+s testfile.txt (Run file with owner’s permissions)
+chmod g+s testdir (File → run with group permissions; Directory → new files inherit group)
+chmod +t testdir (Only owner/root can delete/rename files inside)
+```
+
+**Count groups with more than 3 users** *(~ means contains, gsub also returns no. of replacements)*
+```
+awk -F: '$4 ~ /,/ {if (gsub(/,/,"&")+1 > 3) print $1}' /etc/group | wc -l
+```
+
+**Lock expired accounts**
+```
+awk -F: '$8=="*" {print $1}' /etc/shadow | xargs -I {} sudo usermod -L {}
+```
